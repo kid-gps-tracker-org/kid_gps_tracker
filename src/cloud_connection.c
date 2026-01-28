@@ -644,10 +644,10 @@ void cloud_connection_thread_fn(void)
 {
 	long_led_pattern(LED_WAITING);
 
-	configure_apn();
-
 	LOG_INF("Enabling connectivity...");
 	conn_mgr_all_if_connect(true);
+
+	configure_apn();
 
 	LOG_INF("Setting up nRF Cloud library...");
 	if (setup_cloud()) {
