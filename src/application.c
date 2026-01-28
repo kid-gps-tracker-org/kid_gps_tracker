@@ -28,8 +28,23 @@
 #include "led_control.h"
 #include "at_commands.h"
 #include "shadow_config.h"
+#include <nrf_modem_at.h>
 
 LOG_MODULE_REGISTER(application, CONFIG_MULTI_SERVICE_LOG_LEVEL);
+
+static void configure_apn(void)
+{
+	int err;
+	err = nrf_modem_at_cmd(NULL, 0, "AT+CGDCONT=0,\"IP\",\"iijmobile.biz\"");
+	if (err) {
+		LOG_ERR("Failed to set APN, error: %d", err);
+	}
+
+	err = nrf_modem_at_cmd(NULL, 0, "AT+CGAUTH=0,1,\"mobile@iij\",\"iij\"");
+	if (err) {
+		LOG_ERR("Failed to set APN auth, error: %d", err);
+	}
+}
 
 /* Timer used to time the sensor sampling rate. */
 static K_TIMER_DEFINE(sensor_sample_timer, NULL, NULL);
@@ -371,6 +386,8 @@ void main_application_thread_fn(void)
 	}
 
 	dk_buttons_init(button_handler);
+
+	configure_apn(); 
 
 	/* Wait for first connection before starting the application. */
 	(void)await_cloud_ready(K_FOREVER);
