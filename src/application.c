@@ -32,7 +32,7 @@
 
 LOG_MODULE_REGISTER(application, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 
-static void configure_apn(void)
+void configure_apn(void)
 {
 	int err;
 	err = nrf_modem_at_cmd(NULL, 0, "AT+CGDCONT=0,\"IP\",\"iijmobile.biz\"");
@@ -43,6 +43,17 @@ static void configure_apn(void)
 	err = nrf_modem_at_cmd(NULL, 0, "AT+CGAUTH=0,1,\"mobile@iij\",\"iij\"");
 	if (err) {
 		LOG_ERR("Failed to set APN auth, error: %d", err);
+	}
+
+	/* Restart modem to apply APN settings */
+	err = nrf_modem_at_cmd(NULL, 0, "AT+CFUN=4");
+	if (err) {
+		LOG_ERR("Failed to set CFUN=4, error: %d", err);
+	}
+
+	err = nrf_modem_at_cmd(NULL, 0, "AT+CFUN=1");
+	if (err) {
+		LOG_ERR("Failed to set CFUN=1, error: %d", err);
 	}
 }
 
@@ -386,8 +397,6 @@ void main_application_thread_fn(void)
 	}
 
 	dk_buttons_init(button_handler);
-
-	configure_apn(); 
 
 	/* Wait for first connection before starting the application. */
 	(void)await_cloud_ready(K_FOREVER);

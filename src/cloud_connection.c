@@ -23,6 +23,7 @@
 #include "fota_support.h"
 #include "location_tracking.h"
 #include "led_control.h"
+#include "application.h"
 #include "shadow_config.h"
 
 LOG_MODULE_REGISTER(cloud_connection, CONFIG_MULTI_SERVICE_LOG_LEVEL);
@@ -642,6 +643,8 @@ static void check_credentials(void)
 void cloud_connection_thread_fn(void)
 {
 	long_led_pattern(LED_WAITING);
+
+	configure_apn();
 
 	LOG_INF("Enabling connectivity...");
 	conn_mgr_all_if_connect(true);
