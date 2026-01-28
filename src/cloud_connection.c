@@ -23,6 +23,7 @@
 #include "fota_support.h"
 #include "location_tracking.h"
 #include "led_control.h"
+#include "application.h"
 #include "shadow_config.h"
 
 LOG_MODULE_REGISTER(cloud_connection, CONFIG_MULTI_SERVICE_LOG_LEVEL);
@@ -645,6 +646,8 @@ void cloud_connection_thread_fn(void)
 
 	LOG_INF("Enabling connectivity...");
 	conn_mgr_all_if_connect(true);
+
+	configure_apn();
 
 	LOG_INF("Setting up nRF Cloud library...");
 	if (setup_cloud()) {

@@ -28,8 +28,52 @@
 #include "led_control.h"
 #include "at_commands.h"
 #include "shadow_config.h"
+#include <nrf_modem_at.h>
 
 LOG_MODULE_REGISTER(application, CONFIG_MULTI_SERVICE_LOG_LEVEL);
+
+void configure_apn(void)
+{
+	int err;
+	int retries = 0;
+	char buf[64];
+
+	LOG_INF("Configuring APN for IIJ Mobile...");
+
+	/* Wait for modem to be ready before sending AT commands */
+	while (retries < 10) {
+		err = nrf_modem_at_cmd(buf, sizeof(buf), "AT+CGDCONT=0,\"IP\",\"iijmobile.biz\"");
+		if (err == 0) {
+			break;
+		}
+		LOG_DBG("Waiting for modem ready, attempt %d, err: %d", retries + 1, err);
+		k_sleep(K_SECONDS(1));
+		retries++;
+	}
+
+	if (err != 0) {
+		LOG_ERR("Failed to set APN after %d retries, error: %d", retries, err);
+		return;
+	}
+
+	err = nrf_modem_at_cmd(buf, sizeof(buf), "AT+CGAUTH=0,1,\"mobile@iij\",\"iij\"");
+	if (err) {
+		LOG_ERR("Failed to set APN auth, error: %d", err);
+	}
+
+	/* Restart modem to apply APN settings */
+	err = nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=4");
+	if (err) {
+		LOG_ERR("Failed to set CFUN=4, error: %d", err);
+	}
+
+	err = nrf_modem_at_cmd(buf, sizeof(buf), "AT+CFUN=1");
+	if (err) {
+		LOG_ERR("Failed to set CFUN=1, error: %d", err);
+	}
+
+	LOG_INF("APN configuration complete");
+}
 
 /* Timer used to time the sensor sampling rate. */
 static K_TIMER_DEFINE(sensor_sample_timer, NULL, NULL);
