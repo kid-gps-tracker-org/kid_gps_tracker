@@ -1,0 +1,99 @@
+name: Release Firmware
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        board: [nrf9151dk_nrf9151_ns, nrf9160dk_nrf9160_ns, nrf9161dk_nrf9161_ns]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Inject version into Kconfig
+        run: python3 scripts/version_inject.py ${{ steps.version.outputs.tag }}
+
+      - name: Setup nRF Connect SDK
+        uses: nordic-actions/ncs-setup@v1
+        with:
+          ncs-version: v2.9.2
+
+      - name: Build firmware
+        run: west build -b ${{ matrix.board }} -p --pristine
+
+      - name: Rename artifacts
+        run: |
+          mkdir -p release-artifacts
+          BOARD_SHORT=$(echo ${{ matrix.board }} | cut -d_ -f1)
+          cp build/dfu_application.zip \
+             release-artifacts/kid_gps_tracker_v${{ steps.version.outputs.version }}_${BOARD_SHORT}.zip
+          cp build/merged.hex \
+             release-artifacts/kid_gps_tracker_v${{ steps.version.outputs.version }}_${BOARD_SHORT}.hex
+          cp build/dfu_application.zip_manifest.json \
+             release-artifacts/manifest_${BOARD_SHORT}.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.board }}
+          path: release-artifacts/*
+
+  create-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Generate release notes
+        run: python3 scripts/release_notes.py ${{ steps.version.outputs.tag }} > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Kid GPS Tracker ${{ steps.version.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+          files: release-artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # クラウド側への通知（オプション - 設定後に有効化）
+      # - name: Trigger cloud upload (webhook)
+      #   run: |
+      #     curl -X POST https://your-cloud-service.com/webhook/release \
+      #       -H "Authorization: Bearer ${{ secrets.CLOUD_WEBHOOK_TOKEN }}" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{
+      #         "version": "${{ steps.version.outputs.tag }}",
+      #         "repository": "kid_gps_tracker"
+      #       }'
