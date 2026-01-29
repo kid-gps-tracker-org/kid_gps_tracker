@@ -11,24 +11,26 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        board: [nrf9151dk_nrf9151_ns, nrf9160dk_nrf9160_ns, nrf9161dk_nrf9161_ns]
+        board: [nrf9151dk_nrf9151_ns]
+
+    container:
+      image: nordicplayground/nrfconnect-sdk:v2.9.2
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup nRF Connect SDK
-        uses: nordic-actions/ncs-setup@v1
         with:
-          ncs-version: v2.9.2
+          path: kid_gps_tracker
 
-      - name: Build
-        run: west build -b ${{ matrix.board }} -p
+      - name: Build firmware
+        working-directory: kid_gps_tracker
+        run: |
+          west build -b ${{ matrix.board }} -p
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.board }}-${{ github.sha }}
           path: |
-            build/dfu_application.zip
-            build/merged.hex
+            kid_gps_tracker/build/dfu_application.zip
+            kid_gps_tracker/build/merged.hex
