@@ -1,0 +1,34 @@
+name: Build Firmware (CI)
+
+on:
+  push:
+    branches: [master, develop, 'fix/**']
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        board: [nrf9151dk_nrf9151_ns]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build firmware
+        run: |
+          docker run --rm \
+            -v ${PWD}:/workdir/project \
+            -w /workdir/project \
+            nordicplayground/nrfconnect-sdk:v2.9-branch \
+              west build -b ${{ matrix.board }} -p --build-dir /workdir/project/build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.board }}-${{ github.sha }}
+          path: |
+            build/dfu_application.zip
+            build/merged.hex

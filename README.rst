@@ -1486,3 +1486,120 @@ It uses the following Zephyr libraries:
 In addition, it uses the following secure firmware component:
 
 * :ref:`Trusted Firmware-M <ug_tfm>`
+
+CI/CD とファームウェアリリース
+********************************
+
+ローカルでのファームウェアビルド
+================================
+
+通常のビルド
+------------
+
+.. code-block:: console
+
+   west build -b nrf9151dk_nrf9151_ns
+
+バージョン指定のリリースビルド
+------------------------------
+
+.. code-block:: console
+
+   python3 scripts/version_inject.py v1.2.3
+   west build -b nrf9151dk_nrf9151_ns --pristine
+
+新しいリリースの作成
+====================
+
+1. ``CHANGELOG.md`` にリリースノートを記載
+2. アノテーション付きタグを作成してプッシュ:
+
+.. code-block:: console
+
+   git tag -a v1.2.3 -m "Release 1.2.3: 説明"
+   git push origin v1.2.3
+
+3. GitHub Actions が自動的に以下を実行:
+
+   - サポートされているすべてのボード向けにファームウェアをビルド
+   - 成果物を含む GitHub Release を作成
+   - (オプション) nRF Cloud FOTA サービスにアップロード
+
+ファームウェアのダウンロード
+============================
+
+- `Releases ページ <https://github.com/kid-gps-tracker-org/kid_gps_tracker/releases>`_ にアクセス
+- お使いのボード用の ``.zip`` バンドルをダウンロード
+- FOTA デプロイのために nRF Cloud ポータルにアップロード
+
+nRF Cloud FOTA のセットアップ
+==============================
+
+1. ファームウェアバンドルをアップロード: Firmware Update → Upload Bundle
+2. FOTA ジョブを作成: デバイスグループとファームウェアバージョンを選択
+3. 接続時にデバイスが MQTT 経由で自動更新されます
+
+---
+
+CI/CD Workflow Details (詳細)
+******************************
+
+GitHub Actions ワークフロー
+===========================
+
+本プロジェクトでは、以下の2つの GitHub Actions ワークフローを使用しています：
+
+**build.yml** - 継続的インテグレーション
+-----------------------------------------
+
+- **トリガー**: ``main`` または ``develop`` ブランチへのプッシュ、プルリクエスト
+- **目的**: コードの変更が正常にビルドできることを確認
+- **対象ボード**: nRF9151 DK、nRF9160 DK、nRF9161 DK
+
+**release.yml** - リリース自動化
+---------------------------------
+
+- **トリガー**: ``v*.*.*`` 形式のタグがプッシュされたとき
+- **処理内容**:
+
+  1. Git タグからバージョン番号を抽出（例: ``v1.2.3`` → ``1.2.3``）
+  2. ``scripts/version_inject.py`` で ``Kconfig`` の ``CONFIG_APP_VERSION`` を更新
+  3. nRF Connect SDK v2.9.2 でファームウェアをビルド
+  4. 成果物をボード別にリネーム（例: ``kid_gps_tracker_v1.2.3_nrf9151.zip``）
+  5. GitHub Release を作成し、ビルド成果物とリリースノートを添付
+
+バージョン管理
+==============
+
+本プロジェクトでは、セマンティックバージョニング（SemVer）を採用しています：
+
+- **メジャーバージョン** (例: v2.0.0): 互換性のない API 変更
+- **マイナーバージョン** (例: v1.2.0): 後方互換性のある機能追加
+- **パッチバージョン** (例: v1.2.3): 後方互換性のあるバグ修正
+
+バージョン番号は Git タグで管理され、ビルド時に自動的にファームウェアに埋め込まれます。
+
+トラブルシューティング
+======================
+
+GitHub Actions ビルドが失敗する場合
+------------------------------------
+
+- nRF Connect SDK のバージョンが v2.9.2 と一致しているか確認
+- ``scripts/version_inject.py`` が正しく実行されているか確認
+- ``Kconfig`` に構文エラーがないか確認
+
+ローカルビルドが失敗する場合
+----------------------------
+
+- West ツールが正しくインストールされているか確認:
+
+  .. code-block:: console
+
+     west --version
+
+- ビルドディレクトリをクリーンアップ:
+
+  .. code-block:: console
+
+     west build -b nrf9151dk_nrf9151_ns -p --pristine
