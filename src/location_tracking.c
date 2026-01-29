@@ -184,3 +184,8 @@ int update_location_tracking_interval(int interval)
 
 	return 0;
 }
+
+bool is_location_tracking_initialized(void)
+{
+	return location_initialized;
+}
