@@ -30,6 +30,14 @@ int start_location_tracking(location_update_cb_t handler_cb, int interval);
  * @param interval - The new interval, in seconds.
  */
 int update_location_tracking_interval(int interval);
+
+/**
+ * @brief Check if location tracking is initialized.
+ *
+ * @return true if initialized, false otherwise.
+ */
+bool is_location_tracking_initialized(void);
+
 static inline bool location_tracking_enabled(void)
 {
 	return IS_ENABLED(CONFIG_LOCATION_TRACKING_GNSS) ||

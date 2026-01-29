@@ -541,10 +541,15 @@ void location_interval_set(const int interval)
 	if (interval > 0) {
 		current_location_interval = interval;
 #if defined(CONFIG_LOCATION_TRACKING)
-		/* Update the location tracking interval */
-		int err = update_location_tracking_interval(interval);
-		if (err) {
-			LOG_WRN("Failed to update location tracking interval: %d", err);
+		/* Only update if location tracking is initialized */
+		if (is_location_tracking_initialized()) {
+			/* Update the location tracking interval */
+			int err = update_location_tracking_interval(interval);
+			if (err) {
+				LOG_WRN("Failed to update location tracking interval: %d", err);
+			}
+		} else {
+			LOG_DBG("Location tracking not yet initialized, interval will be applied on startup");
 		}
 #endif
 	}
