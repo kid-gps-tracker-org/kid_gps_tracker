@@ -29,13 +29,13 @@ jobs:
       - name: Inject version into Kconfig
         run: python3 scripts/version_inject.py ${{ steps.version.outputs.tag }}
 
-      - name: Setup nRF Connect SDK
-        uses: nordic-actions/ncs-setup@v1
-        with:
-          ncs-version: v2.9.2
-
       - name: Build firmware
-        run: west build -b ${{ matrix.board }} -p --pristine
+        run: |
+          docker run --rm \
+            -v ${PWD}:/workdir/project \
+            -w /workdir/project \
+            nordicplayground/nrfconnect-sdk:v2.9-branch \
+              west build -b ${{ matrix.board }} -p --pristine --build-dir /workdir/project/build
 
       - name: Rename artifacts
         run: |
