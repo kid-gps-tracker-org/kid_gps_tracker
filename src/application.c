@@ -448,11 +448,14 @@ void main_application_thread_fn(void)
 
 #if defined(CONFIG_LOCATION_TRACKING)
 	/* Begin tracking location at the configured interval. */
-	(void)start_location_tracking(on_location_update,
+	int err = start_location_tracking(on_location_update,
 					CONFIG_LOCATION_TRACKING_SAMPLE_INTERVAL_SECONDS);
-
-	/* Start the 24-hour battery timer */
-	k_timer_start(&battery_timer, K_SECONDS(24 * 3600), K_FOREVER);
+	if (err) {
+		LOG_ERR("Failed to start location tracking: %d", err);
+	} else {
+		/* Start the 24-hour battery timer only if location tracking started successfully */
+		k_timer_start(&battery_timer, K_SECONDS(24 * 3600), K_FOREVER);
+	}
 #endif
 
 	/* Begin sampling sensors. */
@@ -490,14 +493,21 @@ void main_application_thread_fn(void)
 		if (!await_cloud_ready(K_NO_WAIT) && is_device_deleted()) {
 #if defined(CONFIG_LOCATION_TRACKING)
 			(void)location_request_cancel();
+			k_timer_stop(&battery_timer);
 #endif
 			LOG_INF("Cloud not ready. Pausing sensors.");
 			(void)await_cloud_ready(K_FOREVER);
 			LOG_INF("Cloud is ready. Enabling sensors.");
 #if defined(CONFIG_LOCATION_TRACKING)
 			/* Begin tracking location at the configured interval. */
-			(void)start_location_tracking(on_location_update,
+			int err = start_location_tracking(on_location_update,
 						  CONFIG_LOCATION_TRACKING_SAMPLE_INTERVAL_SECONDS);
+			if (err) {
+				LOG_ERR("Failed to restart location tracking: %d", err);
+			} else {
+				/* Restart the 24-hour battery timer */
+				k_timer_start(&battery_timer, K_SECONDS(24 * 3600), K_FOREVER);
+			}
 #endif
 		}
 	}
@@ -530,8 +540,13 @@ void location_interval_set(const int interval)
 {
 	if (interval > 0) {
 		current_location_interval = interval;
+#if defined(CONFIG_LOCATION_TRACKING)
 		/* Update the location tracking interval */
-		(void)update_location_tracking_interval(interval);
+		int err = update_location_tracking_interval(interval);
+		if (err) {
+			LOG_WRN("Failed to update location tracking interval: %d", err);
+		}
+#endif
 	}
 }
 
