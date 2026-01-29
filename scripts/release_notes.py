@@ -60,12 +60,18 @@ def generate_release_notes(tag: str) -> str:
             notes += "\n"
 
     notes += "## インストール方法\n\n"
-    notes += "お使いのデバイスに対応するファームウェアをダウンロードしてください：\n\n"
-    notes += f"- `kid_gps_tracker_{tag.lstrip('v')}_nrf9151.zip` - nRF9151 DK用\n"
-    notes += f"- `kid_gps_tracker_{tag.lstrip('v')}_nrf9160.zip` - nRF9160 DK用\n"
-    notes += f"- `kid_gps_tracker_{tag.lstrip('v')}_nrf9161.zip` - nRF9161 DK用\n\n"
-    notes += "nRF Cloud ポータルの Firmware Update → Firmware Bundles から"
-    notes += "アップロードし、デバイスグループに対してFOTAジョブを作成してください。\n"
+    notes += "### ファームウェアファイル\n\n"
+    notes += f"- `kid_gps_tracker_{tag.lstrip('v')}_nrf9151dk.zip` - FOTA用DFUパッケージ\n"
+    notes += f"- `kid_gps_tracker_{tag.lstrip('v')}_nrf9151dk.hex` - フラッシュ書き込み用\n"
+    notes += f"- `manifest_nrf9151dk.json` - ファームウェアメタデータ\n\n"
+    notes += "### nRF Cloud 経由での更新\n\n"
+    notes += "1. nRF Cloud ポータルにログイン\n"
+    notes += "2. Firmware Update → Firmware Bundles へ移動\n"
+    notes += f"3. `kid_gps_tracker_{tag.lstrip('v')}_nrf9151dk.zip` をアップロード\n"
+    notes += "4. デバイスグループに対してFOTAジョブを作成\n"
+    notes += "5. ジョブを実行してデバイスを更新\n\n"
+    notes += "### ローカルでのフラッシュ書き込み\n\n"
+    notes += f"`nrfjprog` を使用して `kid_gps_tracker_{tag.lstrip('v')}_nrf9151dk.hex` を書き込むこともできます。\n"
 
     return notes
 
