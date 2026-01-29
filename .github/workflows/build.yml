@@ -13,24 +13,22 @@ jobs:
       matrix:
         board: [nrf9151dk_nrf9151_ns]
 
-    container:
-      image: nordicplayground/nrfconnect-sdk:v2.9-branch
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: kid_gps_tracker
 
       - name: Build firmware
-        working-directory: kid_gps_tracker
         run: |
-          west build -b ${{ matrix.board }} -p
+          docker run --rm \
+            -v ${PWD}:/workdir/project \
+            -w /workdir/project \
+            nordicplayground/nrfconnect-sdk:v2.9-branch \
+              west build -b ${{ matrix.board }} -p --build-dir /workdir/project/build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ matrix.board }}-${{ github.sha }}
           path: |
-            kid_gps_tracker/build/dfu_application.zip
-            kid_gps_tracker/build/merged.hex
+            build/dfu_application.zip
+            build/merged.hex
