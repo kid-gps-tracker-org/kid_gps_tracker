@@ -1603,3 +1603,52 @@ GitHub Actions ビルドが失敗する場合
   .. code-block:: console
 
      west build -b nrf9151dk_nrf9151_ns -p --pristine
+
+開発用ツール
+************
+
+デバイスシミュレータ (PC用 Pythonプログラム)
+============================================
+
+.. important::
+   このシミュレータは **PC上で動作する Python プログラム** であり、nRF9151 DK上で動作するデバイスファームウェア（``src/`` 以下の C ソースコード）とは **別のプログラム** です。
+
+nRF9151 DK の実機が手元にない期間でも、クラウド側（AWS バックエンド）や iPhone アプリの開発を継続するためのツールです。
+nRF9151 DK と同じフォーマットで nRF Cloud に GNSS / 温度 / アラートデータを送信するため、AWS バックエンドや iPhone アプリからは実機と区別がつきません。
+
+**ファイル場所**: ``tools/simulator/``
+
+.. code-block:: text
+
+   tools/simulator/
+     device_simulator.py    ... メインシミュレータ (PC用 Python)
+     setup_credentials.py   ... セットアップウィザード
+     config_template.json   ... 設定テンプレート
+     requirements.txt       ... Python 依存パッケージ
+     README.md              ... シミュレータの詳細手順書
+
+**アーキテクチャ**:
+
+.. code-block:: text
+
+   [実機] nRF9151 DK ──MQTT──> nRF Cloud ──REST API──> AWS Backend ──> iPhone App
+                                  ↑
+   [代替] Simulator (PC) ─MQTT─┘
+
+**クイックスタート**:
+
+.. code-block:: console
+
+   cd tools/simulator
+   py -m pip install -r requirements.txt
+   py setup_credentials.py
+   py device_simulator.py
+
+**前提条件**: Python 3.10+、OpenSSL、nRF Cloud API キー
+
+詳細な手順は ``tools/simulator/README.md`` を参照してください。
+
+.. note::
+   - デバイスファームウェアのソースコード: ``src/`` 以下 (C言語、nRF9151 DK 上で実行)
+   - デバイスシミュレータ: ``tools/simulator/`` 以下 (Python、PC 上で実行)
+   - 両者は独立したプログラムです。シミュレータの変更はファームウェアに影響しません。

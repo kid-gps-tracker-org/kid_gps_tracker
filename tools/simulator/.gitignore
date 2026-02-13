@@ -1,0 +1,4 @@
+# Secrets - never commit these
+config.json
+certs/
+__pycache__/

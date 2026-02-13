@@ -1,0 +1,14 @@
+{
+    "nrf_cloud": {
+        "api_key": "<YOUR_API_KEY>",
+        "api_host": "https://api.nrfcloud.com",
+        "device_id": "kid-gps-sim-001"
+    },
+    "simulation": {
+        "location_interval_seconds": 300,
+        "temperature_interval_seconds": 300,
+        "temperature_base": 25.0,
+        "temperature_variation": 3.0,
+        "app_version": "0.0.1"
+    }
+}
