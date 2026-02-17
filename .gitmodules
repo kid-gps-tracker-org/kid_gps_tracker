@@ -1,0 +1,3 @@
+[submodule "Specs"]
+	path = Specs
+	url = https://github.com/kid-gps-tracker-org/kid-gps-tracker-specs
